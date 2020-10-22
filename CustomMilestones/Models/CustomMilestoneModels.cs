@@ -54,7 +54,7 @@ namespace CustomMilestones.Models
         [XmlAttribute]
         public string LocalizedName { get; set; }
 
-        [XmlAttribute]
+        [XmlIgnore]
         public string Expansions { get; set; }
     }
 }
