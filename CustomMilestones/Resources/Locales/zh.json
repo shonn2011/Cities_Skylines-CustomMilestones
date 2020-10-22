@@ -1,0 +1,9 @@
+﻿{
+  "UniqueName": "zh",
+  "ReadableName": "简体中文",
+  "KeyValuePairs": {
+    "ModName": "自定义里程碑",
+    "ModDescription": "自定义里程碑",
+    "Label_FreePurchaseArea": "免费购买地块"
+  }
+}

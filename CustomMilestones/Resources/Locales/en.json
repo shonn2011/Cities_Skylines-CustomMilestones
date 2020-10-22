@@ -1,0 +1,9 @@
+﻿{
+  "UniqueName": "en",
+  "ReadableName": "English",
+  "KeyValuePairs": {
+    "ModName": "Custom Milestones",
+    "ModDescription": "Custom Milestones",
+    "Label_FreePurchaseArea": "Free purchase area"
+  }
+}
