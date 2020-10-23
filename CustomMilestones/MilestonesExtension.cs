@@ -1,17 +1,14 @@
 ﻿using ColossalFramework;
-using ColossalFramework.Globalization;
 using ColossalFramework.IO;
 using CustomMilestones.Expansions;
 using CustomMilestones.Helpers;
 using CustomMilestones.Models;
 using ICities;
-using LitJson;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using UnityEngine;
 
 namespace CustomMilestones
 {
@@ -47,6 +44,7 @@ namespace CustomMilestones
                         new MilestoneModel() { Level = 13 }
                         }
                 };
+
                 foreach (var milestone in Singleton<UnlockManager>.instance.m_properties.m_progressionMilestones)
                 {
                     int purchaseAreasCount = Singleton<UnlockManager>.instance.m_properties.m_AreaMilestones.Count(m => m.GetLevel() == milestone.GetLevel());
@@ -164,7 +162,6 @@ namespace CustomMilestones
                         if (!customMilestoneModel.Exists(service.enumName, "Service"))
                         {
                             var level = Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)service.enumValue].GetLevel();
-
                             customMilestoneModel.Milestones[level].Services.Add(new ItemModel()
                             {
                                 Name = service.enumName,
@@ -239,6 +236,8 @@ namespace CustomMilestones
             }
         }
 
+        #region Refresh
+
         private void RefreshRoadMilestone(string name, MilestoneInfo milestoneInfo, ModConfigModel modConfig, bool inGroup = false)
         {
             if (modConfig.RoadExistsBuildings.Contains(name))
@@ -278,6 +277,44 @@ namespace CustomMilestones
                 BuildingInfo building = PrefabCollection<BuildingInfo>.FindLoaded(name);
                 building.m_UnlockMilestone = CompareLowest(milestoneInfo, building.GetUnlockMilestone());
                 RefreshRelatedMilestone(name, building.category, building.m_class.m_service, building.m_class.m_subService, milestoneInfo);
+            }
+        }
+
+        private void RefreshFeatureMilestones(string name, MilestoneInfo milestoneInfo, ModConfigModel modConfig = null, bool inGroup = false)
+        {
+            if (modConfig != null && modConfig.FeatureGroups.TryGetValue(name, out List<string> featureGroup) && !inGroup)
+            {
+                foreach (string item in featureGroup)
+                {
+                    RefreshFeatureMilestones(item, milestoneInfo, modConfig, true);
+                }
+            }
+            else if (name.TryToEnumData(out PositionData<UnlockManager.Feature> position) && milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)position.enumValue].GetLevel())
+            {
+                Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)position.enumValue] = milestoneInfo;
+            }
+        }
+
+        private void RefreshServiceMilestones(string name, MilestoneInfo milestoneInfo, ModConfigModel modConfig = null, bool inGroup = false)
+        {
+            if (modConfig.ServiceExistsFeatures.Contains(name))
+            {
+                RefreshFeatureMilestones(name, milestoneInfo);
+            }
+            else if (name.TryToEnumData(out PositionData<ItemClass.Service> service))
+            {
+                if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)service.enumValue].GetLevel())
+                {
+                    Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)service.enumValue] = milestoneInfo;
+                }
+            }
+        }
+
+        private void RefreshSubServiceMilestones(ItemClass.SubService subService, MilestoneInfo milestoneInfo)
+        {
+            if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_SubServiceMilestones[(int)subService].GetLevel())
+            {
+                Singleton<UnlockManager>.instance.m_properties.m_SubServiceMilestones[(int)subService] = milestoneInfo;
             }
         }
 
@@ -332,54 +369,16 @@ namespace CustomMilestones
                     RefreshFeatureMilestones(UnlockManager.Feature.ParkAreas.ToString(), milestoneInfo);
                     break;
             }
-
             RefreshServiceMilestones(serviceRelated.ToString(), milestoneInfo);
-
             RefreshSubServiceMilestones(subServiceRelated, milestoneInfo);
-        }
-
-        private void RefreshFeatureMilestones(string name, MilestoneInfo milestoneInfo, ModConfigModel modConfig = null, bool inGroup = false)
-        {
-            if (modConfig != null && modConfig.FeatureGroups.TryGetValue(name, out List<string> featureGroup) && !inGroup)
-            {
-                foreach (string featureName in featureGroup)
-                {
-                    RefreshFeatureMilestones(featureName, milestoneInfo, modConfig, true);
-                }
-            }
-            else if (name.TryToEnum(out UnlockManager.Feature feature) && milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)feature].GetLevel())
-            {
-                Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)feature] = milestoneInfo;
-            }
-        }
-
-        private void RefreshServiceMilestones(string name, MilestoneInfo milestoneInfo, ModConfigModel modConfig = null, bool inGroup = false)
-        {
-            if (modConfig.ServiceExistsFeatures.Contains(name))
-            {
-                RefreshFeatureMilestones(name, milestoneInfo);
-            }
-            else if (name.TryToEnum(out ItemClass.Service service))
-            {
-                if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)service].GetLevel())
-                {
-                    Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)service] = milestoneInfo;
-                }
-            }
-        }
-
-        private void RefreshSubServiceMilestones(ItemClass.SubService subService, MilestoneInfo milestoneInfo)
-        {
-            if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_SubServiceMilestones[(int)subService].GetLevel())
-            {
-                Singleton<UnlockManager>.instance.m_properties.m_SubServiceMilestones[(int)subService] = milestoneInfo;
-            }
         }
 
         private void SetPrivateVariable<T>(object obj, string fieldName, T value)
         {
             obj.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, value);
         }
+
+        #endregion
 
         private MilestoneInfo CompareLowest(MilestoneInfo current, MilestoneInfo original)
         {

@@ -1,26 +1,23 @@
-﻿using CustomMilestones.Models;
+﻿using ColossalFramework;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace CustomMilestones.Expansions
 {
     public static class EnumExpansions
     {
-        public static bool TryToEnum<T>(this string enumName, out T t) where T :Enum
+        public static bool TryToEnumData<T>(this string enumName, out PositionData<T> position) where T : struct, IConvertible
         {
-            bool isError = false;
             try
             {
-                isError = true;
-                t = (T)Enum.Parse(typeof(T), enumName);
+                position = Utils.GetOrderedEnumData<T>().First(m => m.enumName == enumName);
+                return false;
             }
             catch
             {
-                t = default;
+                position = default;
+                return true;
             }
-            return isError;
         }
     }
 }
