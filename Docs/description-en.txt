@@ -1,0 +1,7 @@
+[h1][b]Custom Milestones[/b][/h1]
+[img]https://raw.githubusercontent.com/shonn2011/Cities_Skylines-CustomMilestones/main/Images/compatible.png[/img]
+[h3]Overview[/h3]
+This mod allows you to fully customize the content of each milestone unlock using an extensible XML file. Any land, road, building, feature, service, policy etc that is listed in the milestones as unlockable can be moved around to different milestones, or simply unlocked from the start. This file is created when you first load the map with this module enabled. The files are stored in ...\Steam\steamapps\common\Cities_Skylines\CustomMilestone.xml. You can edit with any text editor. This file is created with all the default milestone information for the game.
+
+[url=https://github.com/shonn2011/Cities_Skylines-CustomMilestones]Ô´´úÂë[/url]
+[url=https://paypal.me/shonn2011?locale.x=zh_XC]¾èÔù[/url]
