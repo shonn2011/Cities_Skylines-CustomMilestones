@@ -453,23 +453,23 @@ namespace CustomMilestones
                     RefreshFeatureMilestones(item, milestoneInfo, modConfig, true);
                 }
             }
-            else if (name.TryToEnumData(out PositionData<UnlockManager.Feature> position) && milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)position.enumValue].GetLevel())
+            else if (name.TryToEnumData(out PositionData<UnlockManager.Feature> featureEnum) && milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)featureEnum.enumValue].GetLevel())
             {
-                Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)position.enumValue] = milestoneInfo;
+                Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)featureEnum.enumValue] = milestoneInfo;
             }
         }
 
         private void RefreshServiceMilestones(string name, MilestoneInfo milestoneInfo, ModConfigModel modConfig = null, bool inGroup = false)
         {
-            if (modConfig.ServiceExistsFeatures.Contains(name))
+            if (modConfig != null && modConfig.ServiceExistsFeatures.Contains(name))
             {
                 RefreshFeatureMilestones(name, milestoneInfo);
             }
-            else if (name.TryToEnumData(out PositionData<ItemClass.Service> service))
+            else if (name.TryToEnumData(out PositionData<ItemClass.Service> serviceEnum))
             {
-                if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)service.enumValue].GetLevel())
+                if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)serviceEnum.enumValue].GetLevel())
                 {
-                    Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)service.enumValue] = milestoneInfo;
+                    Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)serviceEnum.enumValue] = milestoneInfo;
                 }
             }
         }
