@@ -59,7 +59,10 @@ namespace CustomMilestones
         public override void OnRefreshMilestones()
         {
             milestonesManager.UnlockMilestone("Basic Road Created");
-            RefreshMilestones();
+            if (managers.loading.currentMode == AppMode.Game)
+            {
+                RefreshMilestones();
+            }
         }
 
         public void RefreshMilestones()
