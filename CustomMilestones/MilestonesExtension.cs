@@ -267,52 +267,61 @@ namespace CustomMilestones
                     });
                 }
 
-                foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("Park"))
+                if (managers.application.SupportsExpansion(Expansion.Parks))
                 {
-                    var level = Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                    customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                    foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("Park"))
                     {
-                        Name = policyEnum.enumName,
-                        LocalizedName = policyEnum.GetLocalizedName(),
-                        Expansions = policyEnum.enumCategory
-                    });
+                        var level = Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
+
+                        customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                        {
+                            Name = policyEnum.enumName,
+                            LocalizedName = policyEnum.GetLocalizedName(),
+                            Expansions = policyEnum.enumCategory
+                        });
+                    }
                 }
 
-                foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("IndustryArea"))
+                if (managers.application.SupportsExpansion(Expansion.Industry))
                 {
-                    var level = Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                    customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                    foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("IndustryArea"))
                     {
-                        Name = policyEnum.enumName,
-                        LocalizedName = policyEnum.GetLocalizedName(),
-                        Expansions = policyEnum.enumCategory
-                    });
+                        var level = Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
+
+                        customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                        {
+                            Name = policyEnum.enumName,
+                            LocalizedName = policyEnum.GetLocalizedName(),
+                            Expansions = policyEnum.enumCategory
+                        });
+                    }
                 }
 
-                foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("CampusArea"))
+                if (managers.application.SupportsExpansion(Expansion.Campuses))
                 {
-                    var level = Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                    customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                    foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("CampusArea"))
                     {
-                        Name = policyEnum.enumName,
-                        LocalizedName = policyEnum.GetLocalizedName(),
-                        Expansions = policyEnum.enumCategory
-                    });
-                }
+                        var level = Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
 
-                foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("CampusAreaVarsity"))
-                {
-                    var level = Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
+                        customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                        {
+                            Name = policyEnum.enumName,
+                            LocalizedName = policyEnum.GetLocalizedName(),
+                            Expansions = policyEnum.enumCategory
+                        });
+                    }
 
-                    customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                    foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("CampusAreaVarsity"))
                     {
-                        Name = policyEnum.enumName,
-                        LocalizedName = policyEnum.GetLocalizedName(),
-                        Expansions = policyEnum.enumCategory
-                    });
+                        var level = Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
+
+                        customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                        {
+                            Name = policyEnum.enumName,
+                            LocalizedName = policyEnum.GetLocalizedName(),
+                            Expansions = policyEnum.enumCategory
+                        });
+                    }
                 }
 
                 //foreach (var infoMode in Utils.GetOrderedEnumData<InfoManager.InfoMode>())
