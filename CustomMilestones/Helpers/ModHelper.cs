@@ -9,23 +9,7 @@ namespace CustomMilestones.Helpers
 {
     public class ModHelper
     {
-        public static string GetModVersion()
-        {
-            Version version = Assembly.GetExecutingAssembly().GetName().Version;
-            StringBuilder stringBuilder = new StringBuilder();
-            if (version.Major > 1)
-            {
-                stringBuilder.Append(version.Major);
-                if (version.Minor > 0)
-                {
-                    stringBuilder.Append(".");
-                    stringBuilder.Append(version.Minor);
-                }
-            }
-            return stringBuilder.ToString();
-        }
-
-        public static string GetModPath()
+        public static string GetPath()
         {
             string path = string.Empty;
             foreach (PluginManager.PluginInfo plugin in PluginManager.instance.GetPluginsInfo())
@@ -41,6 +25,22 @@ namespace CustomMilestones.Helpers
                 catch { }
             }
             return path;
+        }
+
+        public static string GetVersion()
+        {
+            Version version = Assembly.GetExecutingAssembly().GetName().Version;
+            StringBuilder stringBuilder = new StringBuilder();
+            if (version.Major > 1)
+            {
+                stringBuilder.Append(version.Major);
+                if (version.Minor > 0)
+                {
+                    stringBuilder.Append(".");
+                    stringBuilder.Append(version.Minor);
+                }
+            }
+            return stringBuilder.ToString();
         }
     }
 }

@@ -1,7 +1,7 @@
-[h1][b]自定义里程碑[/b][/h1]
-[img]https://raw.githubusercontent.com/shonn2011/Cities_Skylines-CustomMilestones/main/Images/compatible.png[/img]
-[h3]概述[/h3]
-这个模组允许您使用一个可编辑的XML文件完全定制每个里程碑解锁的内容。任何在里程碑中被列为不可锁定的地块、道路、建筑、功能、服务、政策等都可以移动到不同的里程碑，或者从一开始就简单地解锁。该文件是在您第一次加载启用此模组的地图时创建的。文件存储在...\Steam\steamapps\common\Cities_Skylines\CustomMilestone.xml。您可以用任何文本编辑器进行编辑。这个文件是用游戏默认的所有里程碑信息创建的。
+[h1][b]概述[/b][/h1]
 
-[url=https://github.com/shonn2011/Cities_Skylines-CustomMilestones]源代码[/url]
+这个Mod可以通过一个可编辑的Xml文件来自定义每个里程碑的解锁内容。里程碑中列为可解锁的任何道路、建筑、功能、服务、政策和地块都可以移动到不同的里程碑，或者从一开始就简单地解锁。该文件是在您第一次加载启用此模组的地图时用游戏默认的所有里程碑信息创建的，文件存储在...\Steam\steamapps\common\Cities_Skylines\CustomMilestone.xml，您可以用任何文本编辑器进行编辑。
+
+这个Mod还开启了25块地图，并且可以通过编辑Xml里PurchaseAreasCount字段来变更地块的解锁里程碑，最多会把前9个按您分配的里程碑来解锁，剩下的10-25会跟第9个一起解锁。
+
 [url=https://paypal.me/shonn2011?locale.x=zh_XC]捐赠[/url]

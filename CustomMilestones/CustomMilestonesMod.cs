@@ -10,7 +10,7 @@ namespace CustomMilestones
     {
         public static readonly string modSettingFilePath = DataLocation.executableDirectory + "\\CustomMilestone-Setting.json";
 
-        public string Name => Translations.Translate("ModName", "Custom Milestones") + " " + ModHelper.GetModVersion();
+        public string Name => Translations.Translate("ModName", "Custom Milestones") + " " + ModHelper.GetVersion();
 
         public string Description => Translations.Translate("ModDescription", "Custom Milestones");
 

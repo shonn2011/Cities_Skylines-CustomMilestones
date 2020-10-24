@@ -8,32 +8,40 @@ namespace CustomMilestones.Helpers
         public static T FromXmlFile<T>(string filePath)
         {
             T t = default;
-            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+            try
             {
-                XmlSerializer xmlSerializer = new XmlSerializer(typeof(T));
-                using (StreamReader streamReader = new StreamReader(filePath))
+                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
                 {
-                    t = (T)xmlSerializer.Deserialize(streamReader);
+                    XmlSerializer xmlSerializer = new XmlSerializer(typeof(T));
+                    using (StreamReader streamReader = new StreamReader(filePath))
+                    {
+                        t = (T)xmlSerializer.Deserialize(streamReader);
+                    }
                 }
             }
+            catch { }
             return t;
         }
 
         public static void ToXmlFile<T>(T t, string filePath)
         {
-            if (t != null)
+            if (t != null && !string.IsNullOrEmpty(filePath))
             {
-                string content = string.Empty;
-                XmlSerializer xmlSerializer = new XmlSerializer(t.GetType());
-                using (StringWriter stringWriter = new StringWriter())
+                try
                 {
-                    xmlSerializer.Serialize(stringWriter, t);
-                    content = stringWriter.ToString();
+                    string content = string.Empty;
+                    XmlSerializer xmlSerializer = new XmlSerializer(t.GetType());
+                    using (StringWriter stringWriter = new StringWriter())
+                    {
+                        xmlSerializer.Serialize(stringWriter, t);
+                        content = stringWriter.ToString();
+                    }
+                    using (StreamWriter stringWriter = new StreamWriter(filePath))
+                    {
+                        stringWriter.Write(content);
+                    }
                 }
-                using (StreamWriter stringWriter = new StreamWriter(filePath))
-                {
-                    stringWriter.Write(content);
-                }
+                catch { }
             }
         }
     }

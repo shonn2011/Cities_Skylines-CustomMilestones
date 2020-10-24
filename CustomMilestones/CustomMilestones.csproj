@@ -68,8 +68,8 @@
   <ItemGroup>
     <Compile Include="AreasExtension.cs" />
     <Compile Include="CustomMilestonesMod.cs" />
-    <Compile Include="Expansions\EnumExpansions.cs" />
-    <Compile Include="Helpers\CommonExpansions.cs" />
+    <Compile Include="Helpers\Expansions.cs" />
+    <Compile Include="Helpers\EnumHelper.cs" />
     <Compile Include="Helpers\JsonHelper.cs" />
     <Compile Include="Helpers\ModHelper.cs" />
     <Compile Include="Helpers\XmlHelper.cs" />

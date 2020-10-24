@@ -42,6 +42,7 @@ namespace CustomMilestones.Models
         [XmlElement("Policy")]
         public List<ItemModel> Policies = new List<ItemModel>();
 
+        [XmlIgnore]
         [XmlElement("InfoView")]
         public List<ItemModel> InfoViews = new List<ItemModel>();
     }
@@ -55,6 +56,7 @@ namespace CustomMilestones.Models
         public string LocalizedName { get; set; }
 
         [XmlIgnore]
+        [XmlAttribute]
         public string Expansions { get; set; }
     }
 }

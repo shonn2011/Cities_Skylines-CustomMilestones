@@ -39,9 +39,9 @@ namespace CustomMilestones.TranslationFramework
         private void LoadLanguages()
         {
             _languages.Clear();
-            if (!string.IsNullOrEmpty(ModHelper.GetModPath()))
+            if (!string.IsNullOrEmpty(ModHelper.GetPath()))
             {
-                string localePath = Path.Combine(ModHelper.GetModPath(), _localeVirtualPath);
+                string localePath = Path.Combine(ModHelper.GetPath(), _localeVirtualPath);
                 if (Directory.Exists(localePath))
                 {
                     string[] languageFiles = Directory.GetFiles(localePath);

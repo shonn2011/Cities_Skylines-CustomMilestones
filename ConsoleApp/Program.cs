@@ -1,5 +1,5 @@
 ﻿using ColossalFramework;
-using CustomMilestones.Expansions;
+using CustomMilestones.Helpers;
 using System;
 
 namespace ConsoleApp
@@ -8,9 +8,8 @@ namespace ConsoleApp
     {
         static void Main(string[] args)
         {
-            //var a = (UnlockManager.Feature)Enum.Parse(typeof(UnlockManager.Feature), "sdasd");
-            "MonumentLevel5".TryToEnumData(out PositionData<UnlockManager.Feature> position);
-
+            EnumHelper.TryToEnumData("PowerSaving", out PositionData<DistrictPolicies.Policies> policyEnum);
+           var a= policyEnum.GetCategory();
         }
     }
 }

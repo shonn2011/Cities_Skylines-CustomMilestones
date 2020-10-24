@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace CustomMilestones.Helpers
 {
-    public static class CommonExpansions
+    public static class Expansions
     {
         public static bool Exists(this CustomMilestoneModel customMilestone, string name, string category = "")
         {

@@ -8,25 +8,33 @@ namespace CustomMilestones.Helpers
         public static T FromJsonFile<T>(string filePath)
         {
             T t = default;
-            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+            try
             {
-                using (StreamReader streamReader = File.OpenText(filePath))
+                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
                 {
-                    t = JsonMapper.ToObject<T>(streamReader.ReadToEnd());
+                    using (StreamReader streamReader = File.OpenText(filePath))
+                    {
+                        t = JsonMapper.ToObject<T>(streamReader.ReadToEnd());
+                    }
                 }
             }
+            catch { }
             return t;
         }
 
         public static void ToJsonFile<T>(T t, string filePath)
         {
-            if (t != null)
+            if (t != null && !string.IsNullOrEmpty(filePath))
             {
-                string content = JsonMapper.ToJson(t);
-                using (StreamWriter stringWriter = new StreamWriter(filePath))
+                try
                 {
-                    stringWriter.Write(content);
+                    string content = JsonMapper.ToJson(t);
+                    using (StreamWriter stringWriter = new StreamWriter(filePath))
+                    {
+                        stringWriter.Write(content);
+                    }
                 }
+                catch { }
             }
         }
     }

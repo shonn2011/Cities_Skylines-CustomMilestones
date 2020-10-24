@@ -1,6 +1,6 @@
 ﻿using ColossalFramework;
+using ColossalFramework.Globalization;
 using ColossalFramework.IO;
-using CustomMilestones.Expansions;
 using CustomMilestones.Helpers;
 using CustomMilestones.Models;
 using ICities;
@@ -9,18 +9,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
 
 namespace CustomMilestones
 {
     public class MilestonesExtension : MilestonesExtensionBase
     {
-        private static readonly string _customMilestoneFilePath = DataLocation.executableDirectory + "\\CustomMilestone.xml";
-        private static readonly string _modConfigVirtualFilePath = "Resources\\config.json";
+        private static readonly string _xmlFilePath = DataLocation.executableDirectory + "\\CustomMilestone.xml";
+        private static readonly string _modConfigFilePath = "Resources\\config.json";
 
         public override void OnCreated(IMilestones milestones)
         {
             base.OnCreated(milestones);
-            CustomMilestoneModel customMilestone = XmlHelper.FromXmlFile<CustomMilestoneModel>(_customMilestoneFilePath);
+
+            #region 读取/创建Xml文件
+
+            CustomMilestoneModel customMilestone = XmlHelper.FromXmlFile<CustomMilestoneModel>(_xmlFilePath);
             if (customMilestone == null || customMilestone.Rebuild)
             {
                 customMilestone = new CustomMilestoneModel()
@@ -45,188 +49,139 @@ namespace CustomMilestones
                         }
                 };
 
-                foreach (var milestone in Singleton<UnlockManager>.instance.m_properties.m_progressionMilestones)
+                if (Singleton<UnlockManager>.exists)
                 {
-                    int purchaseAreasCount = Singleton<UnlockManager>.instance.m_properties.m_AreaMilestones.Count(m => m.GetLevel() == milestone.GetLevel());
-                    customMilestone.Milestones[milestone.GetLevel()].LocalizedName = milestone.GetLocalizedName();
-                    customMilestone.Milestones[milestone.GetLevel()].RewardCash = milestone.m_rewardCash;
-                    customMilestone.Milestones[milestone.GetLevel()].PurchaseAreasCount = purchaseAreasCount;
+                    foreach (var milestone in Singleton<UnlockManager>.instance.m_properties.m_progressionMilestones)
+                    {
+                        int purchaseAreasCount = Singleton<UnlockManager>.instance.m_properties.m_AreaMilestones.Count(m => m.GetLevel() == milestone.GetLevel());
+                        customMilestone.Milestones[milestone.GetLevel()].LocalizedName = milestone.GetLocalizedName();
+                        customMilestone.Milestones[milestone.GetLevel()].RewardCash = milestone.m_rewardCash;
+                        customMilestone.Milestones[milestone.GetLevel()].PurchaseAreasCount = purchaseAreasCount;
+                    }
                 }
-                XmlHelper.ToXmlFile(customMilestone, _customMilestoneFilePath);
+                XmlHelper.ToXmlFile(customMilestone, _xmlFilePath);
             }
+
+            #endregion
         }
 
         public override void OnRefreshMilestones()
         {
-            milestonesManager.UnlockMilestone("Basic Road Created");
-            if (managers.loading.currentMode == AppMode.Game)
+            if (managers.loading.currentMode == AppMode.Game && Singleton<UnlockManager>.exists)
             {
                 RefreshMilestones();
             }
+            milestonesManager.UnlockMilestone("Basic Road Created");
         }
 
         public void RefreshMilestones()
         {
-            ModConfigModel modConfig = JsonHelper.FromJsonFile<ModConfigModel>(Path.Combine(ModHelper.GetModPath(), _modConfigVirtualFilePath)) ?? new ModConfigModel();
-            CustomMilestoneModel customMilestoneModel = XmlHelper.FromXmlFile<CustomMilestoneModel>(_customMilestoneFilePath);
-            if (customMilestoneModel.Rebuild)
+            ModConfigModel config = JsonHelper.FromJsonFile<ModConfigModel>(Path.Combine(ModHelper.GetPath(), _modConfigFilePath)) ?? new ModConfigModel();
+            CustomMilestoneModel customMilestone = XmlHelper.FromXmlFile<CustomMilestoneModel>(_xmlFilePath);
+
+            if (customMilestone.Rebuild)
             {
-                customMilestoneModel.Rebuild = false;
+                customMilestone.Rebuild = false;
 
-                for (uint i = 0; i < PrefabCollection<NetInfo>.LoadedCount(); i++)
+                //读取默认道路信息
+                for (uint index = 0; index < PrefabCollection<NetInfo>.LoadedCount(); index++)
                 {
-                    NetInfo net = PrefabCollection<NetInfo>.GetLoaded(i);
-                    if (modConfig.RoadIncludes.Contains(modConfig.Renames.GetRename(net.name)))
+                    NetInfo net = PrefabCollection<NetInfo>.GetLoaded(index);
+                    if (config.RoadIncludes.Contains(config.Renames.GetRename(net.name)) && !customMilestone.Exists(config.Renames.GetRename(net.name)))
                     {
-                        if (!customMilestoneModel.Exists(modConfig.Renames.GetRename(net.name)))
+                        if (config.BuildingExistsRoads.Contains(config.Renames.GetRename(net.name)))
                         {
-                            if (modConfig.BuildingExistsRoads.Contains(modConfig.Renames.GetRename(net.name)))
+                            customMilestone.Milestones[net.GetUnlockMilestone().GetLevel()].Buildings.Add(new ItemModel()
                             {
-                                customMilestoneModel.Milestones[net.GetUnlockMilestone().GetLevel()].Buildings.Add(new ItemModel()
-                                {
-                                    Name = modConfig.Renames.GetRename(net.name),
-                                    LocalizedName = net.GetLocalizedTitle(),
-                                    Expansions = net.m_class.m_service.ToString() + "|" + net.m_class.m_subService.ToString() + "|" + net.category
-                                });
-                            }
-                            else
-                            {
-                                customMilestoneModel.Milestones[net.GetUnlockMilestone().GetLevel()].Roads.Add(new ItemModel()
-                                {
-                                    Name = modConfig.Renames.GetRename(net.name),
-                                    LocalizedName = net.GetLocalizedTitle(),
-                                    Expansions = net.m_class.m_service.ToString() + "|" + net.m_class.m_subService.ToString() + "|" + net.category
-                                });
-                            }
+                                Name = config.Renames.GetRename(net.name),
+                                LocalizedName = net.GetLocalizedTitle(),
+                                Expansions = net.m_class.m_service.ToString() + "|" + net.m_class.m_subService.ToString() + "|" + net.category
+                            });
                         }
-                    }
-                }
-
-                for (uint i = 0; i < PrefabCollection<BuildingInfo>.LoadedCount(); i++)
-                {
-                    BuildingInfo building = PrefabCollection<BuildingInfo>.GetLoaded(i);
-                    if (modConfig.BuildingIncludes.Contains(modConfig.Renames.GetRename(building.name)))
-                    {
-                        if (!customMilestoneModel.Exists(modConfig.Renames.GetRename(building.name)))
+                        else
                         {
-                            if (modConfig.RoadExistsBuildings.Contains(modConfig.Renames.GetRename(building.name)))
+                            customMilestone.Milestones[net.GetUnlockMilestone().GetLevel()].Roads.Add(new ItemModel()
                             {
-                                customMilestoneModel.Milestones[building.GetUnlockMilestone().GetLevel()].Roads.Add(new ItemModel()
-                                {
-                                    Name = modConfig.Renames.GetRename(building.name),
-                                    LocalizedName = building.GetLocalizedTitle(),
-                                    Expansions = building.m_class.m_service.ToString() + "|" + building.m_class.m_subService.ToString() + "|" + building.category
-                                });
-                            }
-                            else
-                            {
-                                customMilestoneModel.Milestones[building.GetUnlockMilestone().GetLevel()].Buildings.Add(new ItemModel()
-                                {
-                                    Name = modConfig.Renames.GetRename(building.name),
-                                    LocalizedName = building.GetLocalizedTitle(),
-                                    Expansions = building.m_class.m_service.ToString() + "|" + building.m_class.m_subService.ToString() + "|" + building.category
-                                });
-                            }
-                        }
-                    }
-                }
-
-                foreach (var featureEnum in Utils.GetOrderedEnumData<UnlockManager.Feature>())
-                {
-                    if (modConfig.Features.Contains(featureEnum.enumName))
-                    {
-                        if (!customMilestoneModel.Exists(featureEnum.enumName, "Feature"))
-                        {
-                            var level = Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)featureEnum.enumValue].GetLevel();
-                            if (modConfig.ServiceExistsFeatures.Contains(featureEnum.enumName))
-                            {
-                                customMilestoneModel.Milestones[level].Services.Add(new ItemModel()
-                                {
-                                    Name = featureEnum.enumName,
-                                    LocalizedName = featureEnum.GetLocalizedName(),
-                                });
-                            }
-                            else
-                            {
-                                customMilestoneModel.Milestones[level].Features.Add(new ItemModel()
-                                {
-                                    Name = featureEnum.enumName,
-                                    LocalizedName = featureEnum.GetLocalizedName(),
-                                });
-                            }
-                        }
-                    }
-                }
-
-                foreach (var serviceEnum in Utils.GetOrderedEnumData<ItemClass.Service>())
-                {
-                    if (modConfig.Services.Contains(serviceEnum.enumName))
-                    {
-                        if (!customMilestoneModel.Exists(serviceEnum.enumName, "Service"))
-                        {
-                            var level = Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)serviceEnum.enumValue].GetLevel();
-                            customMilestoneModel.Milestones[level].Services.Add(new ItemModel()
-                            {
-                                Name = serviceEnum.enumName,
-                                LocalizedName = serviceEnum.GetLocalizedName(),
+                                Name = config.Renames.GetRename(net.name),
+                                LocalizedName = net.GetLocalizedTitle(),
+                                Expansions = net.m_class.m_service.ToString() + "|" + net.m_class.m_subService.ToString() + "|" + net.category
                             });
                         }
                     }
                 }
 
-                foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("Industry"))
+                //读取默认建筑信息
+                for (uint index = 0; index < PrefabCollection<BuildingInfo>.LoadedCount(); index++)
                 {
-                    var level = Singleton<UnlockManager>.instance.m_properties.m_SpecializationMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                    customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                    BuildingInfo building = PrefabCollection<BuildingInfo>.GetLoaded(index);
+                    if (config.BuildingIncludes.Contains(config.Renames.GetRename(building.name)) && !customMilestone.Exists(config.Renames.GetRename(building.name)))
                     {
-                        Name = policyEnum.enumName,
-                        LocalizedName = policyEnum.GetLocalizedName(),
-                        Expansions = policyEnum.enumCategory
-                    });
+                        if (config.RoadExistsBuildings.Contains(config.Renames.GetRename(building.name)))
+                        {
+                            customMilestone.Milestones[building.GetUnlockMilestone().GetLevel()].Roads.Add(new ItemModel()
+                            {
+                                Name = config.Renames.GetRename(building.name),
+                                LocalizedName = building.GetLocalizedTitle(),
+                                Expansions = building.m_class.m_service.ToString() + "|" + building.m_class.m_subService.ToString() + "|" + building.category
+                            });
+                        }
+                        else
+                        {
+                            customMilestone.Milestones[building.GetUnlockMilestone().GetLevel()].Buildings.Add(new ItemModel()
+                            {
+                                Name = config.Renames.GetRename(building.name),
+                                LocalizedName = building.GetLocalizedTitle(),
+                                Expansions = building.m_class.m_service.ToString() + "|" + building.m_class.m_subService.ToString() + "|" + building.category
+                            });
+                        }
+                    }
                 }
 
-                foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("Residential"))
+                //读取默认功能信息
+                foreach (var featureEnum in Utils.GetOrderedEnumData<UnlockManager.Feature>())
                 {
-                    var level = Singleton<UnlockManager>.instance.m_properties.m_SpecializationMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                    customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                    if (config.Features.Contains(featureEnum.enumName) && !customMilestone.Exists(featureEnum.enumName, "Feature"))
                     {
-                        Name = policyEnum.enumName,
-                        LocalizedName = policyEnum.GetLocalizedName(),
-                        Expansions = policyEnum.enumCategory
-                    });
+                        var level = Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)featureEnum.enumValue].GetLevel();
+                        if (config.ServiceExistsFeatures.Contains(featureEnum.enumName))
+                        {
+                            customMilestone.Milestones[level].Services.Add(new ItemModel()
+                            {
+                                Name = featureEnum.enumName,
+                                LocalizedName = featureEnum.GetLocalizedName(),
+                            });
+                        }
+                        else
+                        {
+                            customMilestone.Milestones[level].Features.Add(new ItemModel()
+                            {
+                                Name = featureEnum.enumName,
+                                LocalizedName = featureEnum.GetLocalizedName(),
+                            });
+                        }
+                    }
                 }
 
-                foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("Office"))
+                //读取默认服务信息
+                foreach (var serviceEnum in Utils.GetOrderedEnumData<ItemClass.Service>())
                 {
-                    var level = Singleton<UnlockManager>.instance.m_properties.m_SpecializationMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                    customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                    if (config.Services.Contains(serviceEnum.enumName) && !customMilestone.Exists(serviceEnum.enumName, "Service"))
                     {
-                        Name = policyEnum.enumName,
-                        LocalizedName = policyEnum.GetLocalizedName(),
-                        Expansions = policyEnum.enumCategory
-                    });
+                        var level = Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)serviceEnum.enumValue].GetLevel();
+                        customMilestone.Milestones[level].Services.Add(new ItemModel()
+                        {
+                            Name = serviceEnum.enumName,
+                            LocalizedName = serviceEnum.GetLocalizedName(),
+                        });
+                    }
                 }
 
-                foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("Commercial"))
-                {
-                    var level = Singleton<UnlockManager>.instance.m_properties.m_SpecializationMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                    customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
-                    {
-                        Name = policyEnum.enumName,
-                        LocalizedName = policyEnum.GetLocalizedName(),
-                        Expansions = policyEnum.enumCategory
-                    });
-                }
-
+                //读取默认服务政策信息
                 foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("Services"))
                 {
-                    var level = Singleton<UnlockManager>.instance.m_properties.m_ServicePolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                    customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                    var index = (int)(policyEnum.enumValue & (DistrictPolicies.Policies)31);
+                    var level = Singleton<UnlockManager>.instance.m_properties.m_ServicePolicyMilestones[index].GetLevel();
+                    customMilestone.Milestones[level].Policies.Add(new ItemModel()
                     {
                         Name = policyEnum.enumName,
                         LocalizedName = policyEnum.GetLocalizedName(),
@@ -234,11 +189,12 @@ namespace CustomMilestones
                     });
                 }
 
+                //读取默认税收政策信息
                 foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("Taxation"))
                 {
-                    var level = Singleton<UnlockManager>.instance.m_properties.m_TaxationPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                    customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                    var index = (int)(policyEnum.enumValue & (DistrictPolicies.Policies)31);
+                    var level = Singleton<UnlockManager>.instance.m_properties.m_TaxationPolicyMilestones[index].GetLevel();
+                    customMilestone.Milestones[level].Policies.Add(new ItemModel()
                     {
                         Name = policyEnum.enumName,
                         LocalizedName = policyEnum.GetLocalizedName(),
@@ -246,11 +202,12 @@ namespace CustomMilestones
                     });
                 }
 
+                //读取默认城市规划政策信息
                 foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("CityPlanning"))
                 {
-                    var level = Singleton<UnlockManager>.instance.m_properties.m_CityPlanningPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                    customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                    var index = (int)(policyEnum.enumValue & (DistrictPolicies.Policies)31);
+                    var level = Singleton<UnlockManager>.instance.m_properties.m_CityPlanningPolicyMilestones[index].GetLevel();
+                    customMilestone.Milestones[level].Policies.Add(new ItemModel()
                     {
                         Name = policyEnum.enumName,
                         LocalizedName = policyEnum.GetLocalizedName(),
@@ -258,96 +215,31 @@ namespace CustomMilestones
                     });
                 }
 
-                foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("Special"))
+                //读取默认信息面板信息
+                foreach (var infoMode in Utils.GetOrderedEnumData<InfoManager.InfoMode>())
                 {
-                    var level = Singleton<UnlockManager>.instance.m_properties.m_SpecialPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                    customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
+                    var level = Singleton<UnlockManager>.instance.m_properties.m_InfoModeMilestones[(int)infoMode.enumValue].GetLevel();
+                    customMilestone.Milestones[level].InfoViews.Add(new ItemModel()
                     {
-                        Name = policyEnum.enumName,
-                        LocalizedName = policyEnum.GetLocalizedName(),
-                        Expansions = policyEnum.enumCategory
+                        Name = infoMode.enumName,
+                        LocalizedName = Locale.Get("INFOVIEWS", infoMode.enumName)
                     });
                 }
 
-                if (managers.application.SupportsExpansion(Expansion.Parks))
-                {
-                    foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("Park"))
-                    {
-                        var level = Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                        customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
-                        {
-                            Name = policyEnum.enumName,
-                            LocalizedName = policyEnum.GetLocalizedName(),
-                            Expansions = policyEnum.enumCategory
-                        });
-                    }
-                }
-
-                if (managers.application.SupportsExpansion(Expansion.Industry))
-                {
-                    foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("IndustryArea"))
-                    {
-                        var level = Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                        customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
-                        {
-                            Name = policyEnum.enumName,
-                            LocalizedName = policyEnum.GetLocalizedName(),
-                            Expansions = policyEnum.enumCategory
-                        });
-                    }
-                }
-
-                if (managers.application.SupportsExpansion(Expansion.Campuses))
-                {
-                    foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("CampusArea"))
-                    {
-                        var level = Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                        customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
-                        {
-                            Name = policyEnum.enumName,
-                            LocalizedName = policyEnum.GetLocalizedName(),
-                            Expansions = policyEnum.enumCategory
-                        });
-                    }
-
-                    foreach (var policyEnum in Utils.GetOrderedEnumData<DistrictPolicies.Policies>("CampusAreaVarsity"))
-                    {
-                        var level = Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[(int)(policyEnum.enumValue & (DistrictPolicies.Policies)31)].GetLevel();
-
-                        customMilestoneModel.Milestones[level].Policies.Add(new ItemModel()
-                        {
-                            Name = policyEnum.enumName,
-                            LocalizedName = policyEnum.GetLocalizedName(),
-                            Expansions = policyEnum.enumCategory
-                        });
-                    }
-                }
-
-                //foreach (var infoMode in Utils.GetOrderedEnumData<InfoManager.InfoMode>())
-                //{
-                //    var level = Singleton<UnlockManager>.instance.m_properties.m_InfoModeMilestones[(int)infoMode.enumValue].GetLevel();
-
-                //    customMilestoneModel.Milestones[level].InfoViews.Add(new ItemModel()
-                //    {
-                //        Name = infoMode.enumName,
-                //        LocalizedName = Locale.Get("INFOVIEWS", infoMode.enumName)
-                //    });
-                //}
-
-                XmlHelper.ToXmlFile(customMilestoneModel, _customMilestoneFilePath);
+                XmlHelper.ToXmlFile(customMilestone, _xmlFilePath);
             }
             else
             {
                 MilestoneInfo[] progressionMilestones = Singleton<UnlockManager>.instance.m_properties.m_progressionMilestones;
-                foreach (MilestoneModel milestoneModel in customMilestoneModel.Milestones)
+
+                //根据配置文件刷新里程碑信息
+                foreach (MilestoneModel milestoneModel in customMilestone.Milestones)
                 {
                     MilestoneInfo milestoneInfo = milestoneModel.Level > 0 ? progressionMilestones[milestoneModel.Level - 1] : null;
+
+                    //刷新里程碑奖金、地块
                     var count = (milestoneModel.Level == 0 && milestoneModel.PurchaseAreasCount == 0) ? 1 : milestoneModel.PurchaseAreasCount;
-                    var total = customMilestoneModel.Milestones.Take(Array.IndexOf(customMilestoneModel.Milestones, milestoneModel)).Sum(m => m.PurchaseAreasCount);
+                    var total = customMilestone.Milestones.Take(Array.IndexOf(customMilestone.Milestones, milestoneModel)).Sum(m => m.PurchaseAreasCount);
                     for (int i = total; i < total + count && i < 9; i++)
                     {
                         Singleton<UnlockManager>.instance.m_properties.m_AreaMilestones[i] = milestoneInfo;
@@ -357,41 +249,46 @@ namespace CustomMilestones
                         milestoneInfo.m_rewardCash = milestoneModel.RewardCash.Value;
                     }
 
+                    //刷新道路
                     foreach (var roadModel in milestoneModel.Roads)
                     {
-                        if (modConfig.RoadIncludes.Contains(roadModel.Name) || modConfig.RoadExistsBuildings.Contains(roadModel.Name))
+                        if (config.RoadIncludes.Contains(roadModel.Name) || config.RoadExistsBuildings.Contains(roadModel.Name))
                         {
-                            RefreshRoadMilestone(roadModel.Name, milestoneInfo, modConfig);
+                            RefreshRoadMilestone(roadModel.Name, milestoneInfo, config);
                         }
                     }
 
+                    //刷新建筑
                     foreach (var buildingModel in milestoneModel.Buildings)
                     {
-                        if (modConfig.BuildingIncludes.Contains(buildingModel.Name) || modConfig.BuildingExistsRoads.Contains(buildingModel.Name))
+                        if (config.BuildingIncludes.Contains(buildingModel.Name) || config.BuildingExistsRoads.Contains(buildingModel.Name))
                         {
-                            RefreshBuildingMilestone(buildingModel.Name, milestoneInfo, modConfig);
+                            RefreshBuildingMilestone(buildingModel.Name, milestoneInfo, config);
                         }
                     }
 
+                    //刷新功能
                     foreach (var featureModel in milestoneModel.Features)
                     {
-                        if (modConfig.Features.Contains(featureModel.Name))
+                        if (config.Features.Contains(featureModel.Name))
                         {
-                            RefreshFeatureMilestones(featureModel.Name, milestoneInfo, modConfig);
+                            RefreshFeatureMilestones(featureModel.Name, milestoneInfo, config);
                         }
                     }
 
-                    foreach (var service in milestoneModel.Services)
+                    //刷新服务
+                    foreach (var serviceModel in milestoneModel.Services)
                     {
-                        if (modConfig.Services.Contains(service.Name) || modConfig.ServiceExistsFeatures.Contains(service.Name))
+                        if (config.Services.Contains(serviceModel.Name) || config.ServiceExistsFeatures.Contains(serviceModel.Name))
                         {
-                            RefreshServiceMilestones(service.Name, milestoneInfo, modConfig);
+                            RefreshServiceMilestones(serviceModel.Name, milestoneInfo, config);
                         }
                     }
 
-                    foreach (var policy in milestoneModel.Policies)
+                    //刷新政策
+                    foreach (var policyModel in milestoneModel.Policies)
                     {
-                        RefreshPolicyMilestones(policy.Name, milestoneInfo);
+                        RefreshPolicyMilestones(policyModel.Name, milestoneInfo);
                     }
                 }
             }
@@ -399,17 +296,24 @@ namespace CustomMilestones
 
         #region Refresh
 
-        private void RefreshRoadMilestone(string name, MilestoneInfo milestoneInfo, ModConfigModel modConfig, bool inGroup = false)
+        /// <summary>
+        /// 刷新道路里程碑
+        /// </summary>
+        /// <param name="name">道路名称</param>
+        /// <param name="milestoneInfo">新的里程碑进度</param>
+        /// <param name="config">配置信息</param>
+        /// <param name="inGroup">是否在组</param>
+        private void RefreshRoadMilestone(string name, MilestoneInfo milestoneInfo, ModConfigModel config, bool inGroup = false)
         {
-            if (modConfig.RoadExistsBuildings.Contains(name))
+            if (config.RoadExistsBuildings.Contains(name))
             {
-                RefreshBuildingMilestone(name, milestoneInfo, modConfig);
+                RefreshBuildingMilestone(name, milestoneInfo, config);
             }
-            else if (modConfig.RoadGroups.TryGetValue(name, out List<string> roadGroup) && !inGroup)
+            else if (config.RoadGroups.TryGetValue(name, out List<string> roadGroup) && !inGroup)
             {
                 foreach (string roadName in roadGroup)
                 {
-                    RefreshRoadMilestone(roadName, milestoneInfo, modConfig, true);
+                    RefreshRoadMilestone(roadName, milestoneInfo, config, true);
                 }
             }
             else if (PrefabCollection<NetInfo>.LoadedExists(name))
@@ -423,17 +327,24 @@ namespace CustomMilestones
             }
         }
 
-        private void RefreshBuildingMilestone(string name, MilestoneInfo milestoneInfo, ModConfigModel modConfig, bool inGroup = false)
+        /// <summary>
+        /// 刷新建筑里程碑
+        /// </summary>
+        /// <param name="name">建筑名称</param>
+        /// <param name="milestoneInfo">新的里程碑进度</param>
+        /// <param name="config">配置信息</param>
+        /// <param name="inGroup">是否在组</param>
+        private void RefreshBuildingMilestone(string name, MilestoneInfo milestoneInfo, ModConfigModel config, bool inGroup = false)
         {
-            if (modConfig.BuildingExistsRoads.Contains(name) || modConfig.BuildingContainedRoads.Contains(name))
+            if (config.BuildingExistsRoads.Contains(name) || config.BuildingContainedRoads.Contains(name))
             {
-                RefreshRoadMilestone(name, milestoneInfo, modConfig);
+                RefreshRoadMilestone(name, milestoneInfo, config);
             }
-            else if (modConfig.BuildingGroups.TryGetValue(name, out List<string> buildingGroup) && !inGroup)
+            else if (config.BuildingGroups.TryGetValue(name, out List<string> buildingGroup) && !inGroup)
             {
                 foreach (string buildingName in buildingGroup)
                 {
-                    RefreshBuildingMilestone(buildingName, milestoneInfo, modConfig, true);
+                    RefreshBuildingMilestone(buildingName, milestoneInfo, config, true);
                 }
             }
             else if (PrefabCollection<BuildingInfo>.LoadedExists(name))
@@ -447,107 +358,15 @@ namespace CustomMilestones
             }
         }
 
-        private void RefreshFeatureMilestones(string name, MilestoneInfo milestoneInfo, ModConfigModel modConfig = null, bool inGroup = false)
-        {
-            if (modConfig != null && modConfig.FeatureGroups.TryGetValue(name, out List<string> featureGroup) && !inGroup)
-            {
-                foreach (string item in featureGroup)
-                {
-                    RefreshFeatureMilestones(item, milestoneInfo, modConfig, true);
-                }
-            }
-            else if (name.TryToEnumData(out PositionData<UnlockManager.Feature> featureEnum) && milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)featureEnum.enumValue].GetLevel())
-            {
-                Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)featureEnum.enumValue] = milestoneInfo;
-            }
-        }
-
-        private void RefreshServiceMilestones(string name, MilestoneInfo milestoneInfo, ModConfigModel modConfig = null, bool inGroup = false)
-        {
-            if (modConfig != null && modConfig.ServiceExistsFeatures.Contains(name))
-            {
-                RefreshFeatureMilestones(name, milestoneInfo);
-            }
-            else if (name.TryToEnumData(out PositionData<ItemClass.Service> serviceEnum))
-            {
-                if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)serviceEnum.enumValue].GetLevel())
-                {
-                    Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)serviceEnum.enumValue] = milestoneInfo;
-                }
-            }
-        }
-
-        private void RefreshSubServiceMilestones(ItemClass.SubService subService, MilestoneInfo milestoneInfo)
-        {
-            if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_SubServiceMilestones[(int)subService].GetLevel())
-            {
-                Singleton<UnlockManager>.instance.m_properties.m_SubServiceMilestones[(int)subService] = milestoneInfo;
-            }
-        }
-
-        private void RefreshPolicyMilestones(string name, MilestoneInfo milestoneInfo)
-        {
-            if (name.TryToEnumData(out PositionData<DistrictPolicies.Policies> policyEnum))
-            {
-                var i = (int)(policyEnum.enumValue & (DistrictPolicies.Policies)31);
-                switch (policyEnum.enumCategory)
-                {
-                    case "Industry":
-                    case "Residential":
-                    case "Office":
-                    case "Commercial":
-                        if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_SpecializationMilestones[i].GetLevel())
-                        {
-                            Singleton<UnlockManager>.instance.m_properties.m_SpecializationMilestones[i] = milestoneInfo;
-                        }
-
-                        break;
-                    case "Services":
-                        if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_ServicePolicyMilestones[i].GetLevel())
-                        {
-                            Singleton<UnlockManager>.instance.m_properties.m_ServicePolicyMilestones[i] = milestoneInfo;
-                        }
-                        break;
-                    case "Taxation":
-                        if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_TaxationPolicyMilestones[i].GetLevel())
-                        {
-                            Singleton<UnlockManager>.instance.m_properties.m_TaxationPolicyMilestones[i] = milestoneInfo;
-                        }
-                        break;
-                    case "CityPlanning":
-                        if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_CityPlanningPolicyMilestones[i].GetLevel())
-                        {
-                            Singleton<UnlockManager>.instance.m_properties.m_CityPlanningPolicyMilestones[i] = milestoneInfo;
-                        }
-                        break;
-                    case "Special":
-                        if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_SpecialPolicyMilestones[i].GetLevel())
-                        {
-                            Singleton<UnlockManager>.instance.m_properties.m_SpecialPolicyMilestones[i] = milestoneInfo;
-                        }
-                        break;
-                    case "Park":
-                    case "IndustryArea":
-                    case "CampusArea":
-                    case "CampusAreaVarsity":
-                        if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[i].GetLevel())
-                        {
-                            Singleton<UnlockManager>.instance.m_properties.m_ParkPolicyMilestones[i] = milestoneInfo;
-                        }
-                        break;
-                }
-
-                if (policyEnum.enumCategory.TryToEnumData(out PositionData<DistrictPolicies.Types> policyTypeEnum))
-                {
-                    if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_PolicyTypeMilestones[(int)policyTypeEnum.enumValue].GetLevel())
-                    {
-                        Singleton<UnlockManager>.instance.m_properties.m_PolicyTypeMilestones[(int)policyTypeEnum.enumValue] = milestoneInfo;
-                    }
-                }
-            }
-        }
-
-        private void RefreshRelatedMilestone(string name, string category, ItemClass.Service serviceRelated, ItemClass.SubService subServiceRelated, MilestoneInfo milestoneInfo)
+        /// <summary>
+        /// 刷新相关的里程碑（服务、子服务、功能等）
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="category"></param>
+        /// <param name="service"></param>
+        /// <param name="subService"></param>
+        /// <param name="milestoneInfo"></param>
+        private void RefreshRelatedMilestone(string name, string category, ItemClass.Service service, ItemClass.SubService subService, MilestoneInfo milestoneInfo)
         {
             switch (category)
             {
@@ -601,8 +420,110 @@ namespace CustomMilestones
                     RefreshFeatureMilestones(UnlockManager.Feature.ParkAreas.ToString(), milestoneInfo);
                     break;
             }
-            RefreshServiceMilestones(serviceRelated.ToString(), milestoneInfo);
-            RefreshSubServiceMilestones(subServiceRelated, milestoneInfo);
+            RefreshServiceMilestones(service.ToString(), milestoneInfo);
+            RefreshSubServiceMilestones(subService, milestoneInfo);
+        }
+
+        /// <summary>
+        /// 刷新功能里程碑
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="milestoneInfo"></param>
+        /// <param name="config"></param>
+        /// <param name="inGroup"></param>
+        private void RefreshFeatureMilestones(string name, MilestoneInfo milestoneInfo, ModConfigModel config = null, bool inGroup = false)
+        {
+            if (config != null && config.FeatureGroups.TryGetValue(name, out List<string> featureGroup) && !inGroup)
+            {
+                foreach (string item in featureGroup)
+                {
+                    RefreshFeatureMilestones(item, milestoneInfo, config, true);
+                }
+            }
+            else if (EnumHelper.TryToEnumData(name, out PositionData<UnlockManager.Feature> featureEnum))
+            {
+                if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)featureEnum.enumValue].GetLevel())
+                {
+                    Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)featureEnum.enumValue] = milestoneInfo;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 刷新服务里程碑
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="milestoneInfo"></param>
+        /// <param name="config"></param>
+        /// <param name="inGroup"></param>
+        private void RefreshServiceMilestones(string name, MilestoneInfo milestoneInfo, ModConfigModel config = null, bool inGroup = false)
+        {
+            if (config != null && config.ServiceExistsFeatures.Contains(name))
+            {
+                RefreshFeatureMilestones(name, milestoneInfo);
+            }
+            else if (EnumHelper.TryToEnumData(name, out PositionData<ItemClass.Service> serviceEnum))
+            {
+                if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)serviceEnum.enumValue].GetLevel())
+                {
+                    Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)serviceEnum.enumValue] = milestoneInfo;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 刷新子服务里程碑
+        /// </summary>
+        /// <param name="subService"></param>
+        /// <param name="milestoneInfo"></param>
+        private void RefreshSubServiceMilestones(ItemClass.SubService subService, MilestoneInfo milestoneInfo)
+        {
+            if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_SubServiceMilestones[(int)subService].GetLevel())
+            {
+                Singleton<UnlockManager>.instance.m_properties.m_SubServiceMilestones[(int)subService] = milestoneInfo;
+            }
+        }
+
+        /// <summary>
+        /// 刷新政策里程碑
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="milestoneInfo"></param>
+        private void RefreshPolicyMilestones(string name, MilestoneInfo milestoneInfo)
+        {
+            if (EnumHelper.TryToEnumData(name, out PositionData<DistrictPolicies.Policies> policyEnum))
+            {
+                RefreshFeatureMilestones(UnlockManager.Feature.Policies.ToString(), milestoneInfo);
+                if (EnumHelper.TryToEnumData(policyEnum.GetCategory(), out PositionData<DistrictPolicies.Types> policyTypeEnum))
+                {
+                    if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_PolicyTypeMilestones[(int)policyTypeEnum.enumValue].GetLevel())
+                    {
+                        Singleton<UnlockManager>.instance.m_properties.m_PolicyTypeMilestones[(int)policyTypeEnum.enumValue] = milestoneInfo;
+                    }
+                }
+                var i = (int)(policyEnum.enumValue & (DistrictPolicies.Policies)31);
+                switch (policyEnum.GetCategory())
+                {
+                    case "Services":
+                        if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_ServicePolicyMilestones[i].GetLevel())
+                        {
+                            Singleton<UnlockManager>.instance.m_properties.m_ServicePolicyMilestones[i] = milestoneInfo;
+                        }
+                        break;
+                    case "Taxation":
+                        if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_TaxationPolicyMilestones[i].GetLevel())
+                        {
+                            Singleton<UnlockManager>.instance.m_properties.m_TaxationPolicyMilestones[i] = milestoneInfo;
+                        }
+                        break;
+                    case "CityPlanning":
+                        if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_CityPlanningPolicyMilestones[i].GetLevel())
+                        {
+                            Singleton<UnlockManager>.instance.m_properties.m_CityPlanningPolicyMilestones[i] = milestoneInfo;
+                        }
+                        break;
+                }
+            }
         }
 
         private void SetPrivateVariable<T>(object obj, string fieldName, T value)
