@@ -4,6 +4,8 @@
   "KeyValuePairs": {
     "ModName": "自定义里程碑",
     "ModDescription": "自定义里程碑",
-    "Label_FreePurchaseArea": "免费购买地块"
+    "Label_FreePurchaseArea": "免费购买地块",
+    "Label_Rebuild": "重新生成Xml文件",
+    "Label_BuildNonDefaul": "生成非游戏默认的资产Xml"
   }
 }

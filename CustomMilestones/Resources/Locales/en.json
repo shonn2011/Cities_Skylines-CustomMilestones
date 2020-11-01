@@ -4,6 +4,8 @@
   "KeyValuePairs": {
     "ModName": "Custom Milestones",
     "ModDescription": "Custom Milestones",
-    "Label_FreePurchaseArea": "Free purchase area"
+    "Label_FreePurchaseArea": "Free purchase area",
+    "Label_Rebuild": "Rebuild Xml File",
+    "Label_BuildNonDefaul": "Build game non-defaul assets xml"
   }
 }

@@ -69,14 +69,15 @@ namespace CustomMilestones
         {
             if (managers.loading.currentMode == AppMode.Game && Singleton<UnlockManager>.exists)
             {
-                RefreshMilestones();
+                ModConfigModel config = JsonHelper.FromJsonFile<ModConfigModel>(Path.Combine(ModHelper.GetPath(), _modConfigFilePath)) ?? new ModConfigModel();
+                BuildNonDefault(config);
+                RefreshMilestones(config);
             }
             milestonesManager.UnlockMilestone("Basic Road Created");
         }
 
-        public void RefreshMilestones()
+        public void RefreshMilestones(ModConfigModel config)
         {
-            ModConfigModel config = JsonHelper.FromJsonFile<ModConfigModel>(Path.Combine(ModHelper.GetPath(), _modConfigFilePath)) ?? new ModConfigModel();
             CustomMilestoneModel customMilestone = XmlHelper.FromXmlFile<CustomMilestoneModel>(_xmlFilePath);
 
             if (customMilestone.Rebuild)
@@ -294,6 +295,57 @@ namespace CustomMilestones
             }
         }
 
+        private void BuildNonDefault(ModConfigModel config)
+        {
+            ModSettingModel modSetting = JsonHelper.FromJsonFile<ModSettingModel>(CustomMilestonesMod.modSettingFilePath) ?? new ModSettingModel();
+            if (modSetting.BuildAllAssets)
+            {
+                CustomAssets assets = new CustomAssets();
+
+                for (uint index = 0; index < PrefabCollection<NetInfo>.LoadedCount(); index++)
+                {
+                    NetInfo net = PrefabCollection<NetInfo>.GetLoaded(index);
+                    if (net.GetUnlockMilestone().GetLevel() > 0 && !config.RoadIncludes.Contains(config.Renames.GetRename(net.name)) && !config.RoadGroups.Any(m => m.Value.Contains(net.name)))
+                    {
+                        assets.Roads.Add(new ItemModel()
+                        {
+                            Name = net.name,
+                            LocalizedName = net.GetLocalizedTitle(),
+                            Expansions = net.m_class.m_service.ToString() + "|" + net.m_class.m_subService.ToString() + "|" + net.category
+                        });
+                    }
+                }
+
+                for (uint index = 0; index < PrefabCollection<BuildingInfo>.LoadedCount(); index++)
+                {
+                    BuildingInfo building = PrefabCollection<BuildingInfo>.GetLoaded(index);
+                    if (building.GetUnlockMilestone().GetLevel() > 0 && !config.BuildingIncludes.Contains(config.Renames.GetRename(building.name)) && !config.BuildingGroups.Any(m => m.Value.Contains(building.name)))
+                    {
+                        if (building.category == "RoadsIntersection")
+                        {
+                            assets.Roads.Add(new ItemModel()
+                            {
+                                Name = building.name,
+                                LocalizedName = building.GetLocalizedTitle()
+                            });
+                        }
+                        else
+                        {
+                            assets.Buildings.Add(new ItemModel()
+                            {
+                                Name = building.name,
+                                LocalizedName = building.GetLocalizedTitle()
+                            });
+                        }
+                    }
+                }
+
+                modSetting.BuildAllAssets = false;
+                JsonHelper.ToJsonFile(modSetting, CustomMilestonesMod.modSettingFilePath);
+                XmlHelper.ToXmlFile(assets, DataLocation.executableDirectory + "\\CustomMilestone-Non-Default.xml");
+            }
+        }
+
         #region Refresh
 
         /// <summary>
@@ -445,6 +497,102 @@ namespace CustomMilestones
                 if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)featureEnum.enumValue].GetLevel())
                 {
                     Singleton<UnlockManager>.instance.m_properties.m_FeatureMilestones[(int)featureEnum.enumValue] = milestoneInfo;
+                    switch (name)
+                    {
+                        case "MonumentLevel2":
+                            milestonesManager.UnlockMilestone("Fountain of LifeDeath Requirements");
+                            milestonesManager.UnlockMilestone("Friendly Neighborhood Requirements");
+                            milestonesManager.UnlockMilestone("Transport Tower Requirements");
+                            milestonesManager.UnlockMilestone("Trash Mall Requirements");
+                            milestonesManager.UnlockMilestone("Posh Mall Requirements");
+                            if (managers.application.SupportsExpansion(Expansion.NaturalDisasters))
+                            {
+                                milestonesManager.UnlockMilestone("Disaster Memorial Requirements");
+                            }
+                            if (managers.application.SupportsExpansion(Expansion.GreenCities))
+                            {
+                                milestonesManager.UnlockMilestone("Climate Research Station Requirements");
+                            }
+                            if (managers.application.SupportsExpansion(Expansion.Parks))
+                            {
+                                milestonesManager.UnlockMilestone("Clock Tower Requirements");
+                            }
+                            break;
+                        case "MonumentLevel3":
+                            milestonesManager.UnlockMilestone("Colossal Offices Requirements");
+                            milestonesManager.UnlockMilestone("Official Park Requirements");
+                            milestonesManager.UnlockMilestone("CourtHouse Requirements");
+                            milestonesManager.UnlockMilestone("Grand Mall Requirements");
+                            milestonesManager.UnlockMilestone("Cityhall Requirements");
+                            if (managers.application.SupportsExpansion(Expansion.NaturalDisasters))
+                            {
+                                milestonesManager.UnlockMilestone("Helicopter Park Requirements");
+                            }
+                            if (managers.application.SupportsExpansion(Expansion.Parks))
+                            {
+                                milestonesManager.UnlockMilestone("Old Market Street Requirements");
+                            }
+                            break;
+                        case "MonumentLevel4":
+                            milestonesManager.UnlockMilestone("Business Park Requirements");
+                            milestonesManager.UnlockMilestone("Library Requirements");
+                            milestonesManager.UnlockMilestone("Observatory Requirements");
+                            milestonesManager.UnlockMilestone("Opera House Requirements");
+                            milestonesManager.UnlockMilestone("Oppression Office Requirements");
+                            if (managers.application.SupportsExpansion(Expansion.NaturalDisasters))
+                            {
+                                milestonesManager.UnlockMilestone("Pyramid Of Safety Requirements");
+                            }
+                            if (managers.application.SupportsExpansion(Expansion.GreenCities))
+                            {
+                                milestonesManager.UnlockMilestone("Floating Gardens Requirements");
+                            }
+                            if (managers.application.SupportsExpansion(Expansion.Parks))
+                            {
+                                milestonesManager.UnlockMilestone("Sea Fortress Requirements");
+                            }
+                            break;
+                        case "MonumentLevel5":
+                            milestonesManager.UnlockMilestone("ScienceCenter Requirements");
+                            milestonesManager.UnlockMilestone("Servicing Services Requirements");
+                            milestonesManager.UnlockMilestone("SeaWorld Requirements");
+                            milestonesManager.UnlockMilestone("Expocenter Requirements");
+                            milestonesManager.UnlockMilestone("High Interest Tower Requirements");
+                            milestonesManager.UnlockMilestone("Academic Library Prerequisites");
+                            milestonesManager.UnlockMilestone("Aviation Club Prerequisites");
+                            if (managers.application.SupportsExpansion(Expansion.NaturalDisasters))
+                            {
+                                milestonesManager.UnlockMilestone("Sphinx Of Scenarios Requirements");
+                            }
+                            if (managers.application.SupportsExpansion(Expansion.GreenCities))
+                            {
+                                milestonesManager.UnlockMilestone("Ziggurat Garden Requirements");
+                            }
+                            if (managers.application.SupportsExpansion(Expansion.Parks))
+                            {
+                                milestonesManager.UnlockMilestone("Observation Tower Requirements");
+                            }
+                            break;
+                        case "MonumentLevel6":
+                            milestonesManager.UnlockMilestone("Cathedral of Plentitude Requirements");
+                            milestonesManager.UnlockMilestone("Stadium Requirements");
+                            milestonesManager.UnlockMilestone("Modern Art Museum Requirements");
+                            milestonesManager.UnlockMilestone("SeaAndSky Scraper Requirements");
+                            milestonesManager.UnlockMilestone("Theater of Wonders Requirements");
+                            if (managers.application.SupportsExpansion(Expansion.NaturalDisasters))
+                            {
+                                milestonesManager.UnlockMilestone("Unicorn Park Requirements");
+                            }
+                            if (managers.application.SupportsExpansion(Expansion.GreenCities))
+                            {
+                                milestonesManager.UnlockMilestone("Central Park Requirements");
+                            }
+                            if (managers.application.SupportsExpansion(Expansion.Parks))
+                            {
+                                milestonesManager.UnlockMilestone("Statue Of Colossalus Requirements");
+                            }
+                            break;
+                    }
                 }
             }
         }
@@ -467,6 +615,24 @@ namespace CustomMilestones
                 if (milestoneInfo.GetLevel() < Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)serviceEnum.enumValue].GetLevel())
                 {
                     Singleton<UnlockManager>.instance.m_properties.m_ServiceMilestones[(int)serviceEnum.enumValue] = milestoneInfo;
+                    switch (name)
+                    {
+                        case "Monuments":
+                            milestonesManager.UnlockMilestone("Statue of Industry Requirements");
+                            milestonesManager.UnlockMilestone("Statue of Wealth Requirements");
+                            milestonesManager.UnlockMilestone("Lazaret Plaza Requirements");
+                            milestonesManager.UnlockMilestone("Statue of Shopping Requirements");
+                            milestonesManager.UnlockMilestone("Plaza of the Dead Requirements");
+                            if (managers.application.SupportsExpansion(Expansion.NaturalDisasters))
+                            {
+                                milestonesManager.UnlockMilestone("Meteor Park Requirements");
+                            }
+                            if (managers.application.SupportsExpansion(Expansion.GreenCities))
+                            {
+                                milestonesManager.UnlockMilestone("Bird And Bee Haven Requirements");
+                            }
+                            break;
+                    }
                 }
             }
         }

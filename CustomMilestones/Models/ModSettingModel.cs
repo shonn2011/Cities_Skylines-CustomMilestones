@@ -8,8 +8,11 @@ namespace CustomMilestones.Models
         public ModSettingModel()
         {
             FreePurchaseArea = true;
+            BuildAllAssets = false;
         }
 
         public bool FreePurchaseArea { get; set; }
+
+        public bool BuildAllAssets { get; set; }
     }
 }

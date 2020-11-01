@@ -47,6 +47,22 @@ namespace CustomMilestones.Models
         public List<ItemModel> InfoViews = new List<ItemModel>();
     }
 
+    [XmlRoot(ElementName = "CustomAssets")]
+    public class CustomAssets
+    {
+        public CustomAssets()
+        {
+            Roads = new List<ItemModel>();
+            Buildings = new List<ItemModel>();
+        }
+
+        [XmlElement("Road")]
+        public List<ItemModel> Roads = new List<ItemModel>();
+
+        [XmlElement("Building")]
+        public List<ItemModel> Buildings = new List<ItemModel>();
+    }
+
     public class ItemModel
     {
         [XmlAttribute]
